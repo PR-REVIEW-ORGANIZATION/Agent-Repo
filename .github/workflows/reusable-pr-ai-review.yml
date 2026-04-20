@@ -54,17 +54,22 @@ jobs:
 
       - name: Resolve engine repository from workflow ref
         env:
+          JOB_WORKFLOW_REF: ${{ github.job_workflow_ref }}
           WORKFLOW_REF: ${{ github.workflow_ref }}
         run: |
-          ENGINE_REPO="${WORKFLOW_REF%%/.github/workflows/*}"
+          EFFECTIVE_REF="${JOB_WORKFLOW_REF:-$WORKFLOW_REF}"
+          ENGINE_REPO="${EFFECTIVE_REF%%/.github/workflows/*}"
+          ENGINE_REF="${EFFECTIVE_REF##*@}"
           echo "ENGINE_REPO=$ENGINE_REPO" >> "$GITHUB_ENV"
+          echo "ENGINE_REF=$ENGINE_REF" >> "$GITHUB_ENV"
+          echo "ENGINE_PATH=.ai-review-engine" >> "$GITHUB_ENV"
 
       - name: Checkout AI review engine repository
         uses: actions/checkout@v5
         with:
           repository: ${{ env.ENGINE_REPO }}
-          ref: ${{ github.workflow_sha }}
-          path: .ai-review-engine
+          ref: ${{ env.ENGINE_REF }}
+          path: ${{ env.ENGINE_PATH }}
 
       - name: Setup Python
         uses: actions/setup-python@v6
@@ -72,7 +77,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install -r .ai-review-engine/requirements.txt
+        run: pip install -r ${{ env.ENGINE_PATH }}/requirements.txt
 
       - name: Generate AI review document
         env:
@@ -82,7 +87,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ inputs.repository }}
           PR_NUMBER: ${{ inputs.pr_number }}
           GITHUB_API_URL: ${{ github.api_url }}
-        run: python .ai-review-engine/scripts/ai_pr_review.py
+        run: python ${{ env.ENGINE_PATH }}/scripts/ai_pr_review.py
 
       - name: Surface policy decision
         id: policy_result
