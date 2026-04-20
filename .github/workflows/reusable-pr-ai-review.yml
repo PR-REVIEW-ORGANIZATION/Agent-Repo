@@ -50,7 +50,7 @@ jobs:
 
     steps:
       - name: Checkout caller repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Resolve engine repository from workflow ref
         env:
@@ -60,14 +60,14 @@ jobs:
           echo "ENGINE_REPO=$ENGINE_REPO" >> "$GITHUB_ENV"
 
       - name: Checkout AI review engine repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ env.ENGINE_REPO }}
           ref: ${{ github.workflow_sha }}
           path: .ai-review-engine
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -76,7 +76,7 @@ jobs:
 
       - name: Generate AI review document
         env:
-          GITHUB_TOKEN: ${{ secrets.github_token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ inputs.openai_model }}
           GITHUB_REPOSITORY: ${{ inputs.repository }}
