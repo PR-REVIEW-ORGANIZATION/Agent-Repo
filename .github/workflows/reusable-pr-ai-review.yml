@@ -76,7 +76,7 @@ jobs:
 
       - name: Generate AI review document
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.github_token }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ inputs.openai_model }}
           GITHUB_REPOSITORY: ${{ inputs.repository }}
