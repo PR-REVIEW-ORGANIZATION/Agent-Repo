@@ -1,0 +1,26 @@
+{
+  "repo_name": "acme/payments-service",
+  "pr_number": 128,
+  "pr_title": "Add idempotency guard to charge endpoint",
+  "pr_description": "Adds request-id based dedupe cache before creating payment intents.",
+  "base_branch": "main",
+  "head_branch": "feature/idempotency-guard",
+  "changed_files": [
+    {
+      "filename": "src/api/charges.py",
+      "status": "modified",
+      "additions": 42,
+      "deletions": 6,
+      "patch": "@@ -42,6 +42,17 @@ def create_charge(request):\n+    token = request.headers.get('Idempotency-Key')\n+    if token is None:\n+        return bad_request('Idempotency-Key required')\n+\n+    cache_key = f'charge:{token}'\n+    cached = redis_client.get(cache_key)\n+    if cached:\n+        return json.loads(cached)\n"
+    },
+    {
+      "filename": "tests/test_charges.py",
+      "status": "modified",
+      "additions": 28,
+      "deletions": 2,
+      "patch": "@@ -88,6 +88,19 @@ def test_create_charge(client):\n+def test_idempotent_charge_reuse(client):\n+    ...\n"
+    }
+  ],
+  "full_diff_patch": "diff --git a/src/api/charges.py b/src/api/charges.py ...",
+  "repository_review_guidelines": "Prioritize security, correctness, and backward compatibility."
+}

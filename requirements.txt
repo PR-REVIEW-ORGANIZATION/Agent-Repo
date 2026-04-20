@@ -1,0 +1,5 @@
+openai>=1.51.0
+requests>=2.32.3
+pydantic>=2.8.2
+jsonschema>=4.23.0
+pytest>=8.3.3

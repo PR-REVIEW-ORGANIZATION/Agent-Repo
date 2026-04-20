@@ -1,0 +1,46 @@
+{
+  "summary": "The PR improves request deduplication but introduces a cache lifecycle risk and misses one regression test around concurrent retries.",
+  "overall_decision": "warn",
+  "risk_level": "medium",
+  "findings": [
+    {
+      "id": "F-001",
+      "title": "Cached response can outlive business validity window",
+      "severity": "high",
+      "category": "correctness",
+      "file": "src/api/charges.py",
+      "line": 47,
+      "explanation": "Idempotency responses are returned without checking expiration metadata, which can replay stale state after settlement changes.",
+      "suggestion": "Store response with an explicit TTL and validate freshness before returning the cached payload.",
+      "confidence": 0.82,
+      "is_mandatory": true
+    },
+    {
+      "id": "F-002",
+      "title": "Missing race-condition coverage for parallel retries",
+      "severity": "medium",
+      "category": "testing",
+      "file": "tests/test_charges.py",
+      "line": 89,
+      "explanation": "Current tests validate sequential idempotency only and do not assert behavior when two requests arrive at the same time.",
+      "suggestion": "Add a parallel execution test that verifies exactly one charge intent is created across concurrent requests.",
+      "confidence": 0.77,
+      "is_mandatory": false
+    }
+  ],
+  "generated_documentation": {
+    "pr_summary": "Introduces Idempotency-Key handling for charge creation and adds baseline tests.",
+    "files_changed_overview": "Updates API charge creation flow and extends charge endpoint tests.",
+    "key_risks": "Stale cache replay and untested concurrent retry behavior.",
+    "design_technical_notes": "Cache keying is clear, but lifecycle policy for cache entries should be explicit.",
+    "test_recommendations": "Add concurrency test and a stale-entry invalidation test.",
+    "release_notes": "Charge endpoint now requires Idempotency-Key and may return cached responses for duplicate requests."
+  },
+  "mandatory_issues": [
+    "src/api/charges.py:47 Cached response can outlive business validity window"
+  ],
+  "optional_recommendations": [
+    "tests/test_charges.py:89 Missing race-condition coverage for parallel retries"
+  ],
+  "policy_notes": []
+}

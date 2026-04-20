@@ -1,0 +1,8 @@
+{
+  "mode": "balanced",
+  "fail_on_severities": ["critical", "high"],
+  "enforced_categories": ["security", "correctness", "testing", "documentation"],
+  "fail_ci_on_high_or_critical": true,
+  "minimum_confidence_to_enforce": 0.6,
+  "allow_style_only_comments": false
+}

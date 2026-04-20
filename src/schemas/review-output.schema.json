@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PR Review Output",
+  "type": "object",
+  "required": [
+    "summary",
+    "overall_decision",
+    "risk_level",
+    "findings",
+    "generated_documentation",
+    "mandatory_issues",
+    "optional_recommendations",
+    "policy_notes"
+  ],
+  "properties": {
+    "summary": {"type": "string", "minLength": 1},
+    "overall_decision": {"type": "string", "enum": ["pass", "warn", "fail"]},
+    "risk_level": {"type": "string", "enum": ["low", "medium", "high", "critical"]},
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "severity",
+          "category",
+          "file",
+          "line",
+          "explanation",
+          "suggestion",
+          "confidence",
+          "is_mandatory"
+        ],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "title": {"type": "string", "minLength": 1},
+          "severity": {"type": "string", "enum": ["critical", "high", "medium", "low", "info"]},
+          "category": {"type": "string", "enum": ["correctness", "bugs", "security", "performance", "maintainability", "architecture", "testing", "documentation", "style"]},
+          "file": {"type": "string", "minLength": 1},
+          "line": {"type": ["integer", "null"], "minimum": 1},
+          "explanation": {"type": "string", "minLength": 1},
+          "suggestion": {"type": "string", "minLength": 1},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "is_mandatory": {"type": "boolean"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "generated_documentation": {
+      "type": "object",
+      "required": [
+        "pr_summary",
+        "files_changed_overview",
+        "key_risks",
+        "design_technical_notes",
+        "test_recommendations",
+        "release_notes"
+      ],
+      "properties": {
+        "pr_summary": {"type": "string", "minLength": 1},
+        "files_changed_overview": {"type": "string", "minLength": 1},
+        "key_risks": {"type": "string", "minLength": 1},
+        "design_technical_notes": {"type": "string", "minLength": 1},
+        "test_recommendations": {"type": "string", "minLength": 1},
+        "release_notes": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "mandatory_issues": {"type": "array", "items": {"type": "string"}},
+    "optional_recommendations": {"type": "array", "items": {"type": "string"}},
+    "policy_notes": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

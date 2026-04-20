@@ -1,0 +1,20 @@
+name: AI PR Review (Caller)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ai-pr-review:
+    uses: <OWNER_OR_ORG>/Agent-Repo/.github/workflows/reusable-pr-ai-review.yml@main
+    with:
+      openai_model: gpt-5-mini
+      repository: ${{ github.repository }}
+      pr_number: ${{ github.event.pull_request.number }}
+      is_draft: ${{ github.event.pull_request.draft }}
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

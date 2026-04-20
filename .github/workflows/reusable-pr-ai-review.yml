@@ -1,0 +1,119 @@
+name: Reusable AI PR Review
+
+on:
+  workflow_call:
+    inputs:
+      openai_model:
+        description: OpenAI model to use
+        required: false
+        type: string
+        default: gpt-5-mini
+      repository:
+        description: Repository in owner/repo format
+        required: true
+        type: string
+      pr_number:
+        description: Pull request number
+        required: true
+        type: number
+      is_draft:
+        description: Whether pull request is draft
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      OPENAI_API_KEY:
+        required: true
+    outputs:
+      review_decision:
+        description: Overall policy decision from review-output.json (pass|warn|fail)
+        value: ${{ jobs.ai-review.outputs.review_decision }}
+      risk_level:
+        description: Risk level from review-output.json
+        value: ${{ jobs.ai-review.outputs.risk_level }}
+      findings_count:
+        description: Number of findings in review-output.json
+        value: ${{ jobs.ai-review.outputs.findings_count }}
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ai-review:
+    if: inputs.is_draft == false
+    runs-on: ubuntu-latest
+    outputs:
+      review_decision: ${{ steps.policy_result.outputs.review_decision }}
+      risk_level: ${{ steps.policy_result.outputs.risk_level }}
+      findings_count: ${{ steps.policy_result.outputs.findings_count }}
+
+    steps:
+      - name: Checkout caller repository
+        uses: actions/checkout@v4
+
+      - name: Resolve engine repository from workflow ref
+        env:
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+        run: |
+          ENGINE_REPO="${WORKFLOW_REF%%/.github/workflows/*}"
+          echo "ENGINE_REPO=$ENGINE_REPO" >> "$GITHUB_ENV"
+
+      - name: Checkout AI review engine repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.ENGINE_REPO }}
+          ref: ${{ github.workflow_sha }}
+          path: .ai-review-engine
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r .ai-review-engine/requirements.txt
+
+      - name: Generate AI review document
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ inputs.openai_model }}
+          GITHUB_REPOSITORY: ${{ inputs.repository }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          GITHUB_API_URL: ${{ github.api_url }}
+        run: python .ai-review-engine/scripts/ai_pr_review.py
+
+      - name: Surface policy decision
+        id: policy_result
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          data = json.loads(Path("review-output.json").read_text(encoding="utf-8"))
+          decision = str(data.get("overall_decision", "unknown")).strip().lower()
+          risk = str(data.get("risk_level", "unknown")).strip().lower()
+          findings = data.get("findings", [])
+          findings_count = len(findings) if isinstance(findings, list) else 0
+
+          with open(Path(os.environ["GITHUB_OUTPUT"]), "a", encoding="utf-8") as out:
+            out.write(f"review_decision={decision}\n")
+            out.write(f"risk_level={risk}\n")
+            out.write(f"findings_count={findings_count}\n")
+
+          with open(Path(os.environ["GITHUB_STEP_SUMMARY"]), "a", encoding="utf-8") as summary:
+            summary.write("## AI PR Review Decision\n")
+            summary.write(f"- Decision: **{decision.upper()}**\n")
+            summary.write(f"- Risk: **{risk.upper()}**\n")
+            summary.write(f"- Findings: **{findings_count}**\n")
+          PY
+
+      - name: Upload review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-pr-review-${{ inputs.pr_number }}
+          path: |
+            pr-review.md
+            review-output.json
