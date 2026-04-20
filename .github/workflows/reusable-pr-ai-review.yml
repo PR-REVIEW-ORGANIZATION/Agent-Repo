@@ -62,14 +62,13 @@ jobs:
           ENGINE_REF="${EFFECTIVE_REF##*@}"
           echo "ENGINE_REPO=$ENGINE_REPO" >> "$GITHUB_ENV"
           echo "ENGINE_REF=$ENGINE_REF" >> "$GITHUB_ENV"
-          echo "ENGINE_PATH=.ai-review-engine" >> "$GITHUB_ENV"
 
       - name: Checkout AI review engine repository
         uses: actions/checkout@v5
         with:
           repository: ${{ env.ENGINE_REPO }}
           ref: ${{ env.ENGINE_REF }}
-          path: ${{ env.ENGINE_PATH }}
+          path: ai-review-engine
 
       - name: Setup Python
         uses: actions/setup-python@v6
@@ -77,7 +76,15 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install -r ${{ env.ENGINE_PATH }}/requirements.txt
+        run: |
+          if [ -f "ai-review-engine/requirements.txt" ]; then
+            pip install -r ai-review-engine/requirements.txt
+          else
+            echo "ERROR: ai-review-engine/requirements.txt not found"
+            echo "Contents of ai-review-engine:"
+            ls -la ai-review-engine || true
+            exit 1
+          fi
 
       - name: Generate AI review document
         env:
@@ -87,7 +94,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ inputs.repository }}
           PR_NUMBER: ${{ inputs.pr_number }}
           GITHUB_API_URL: ${{ github.api_url }}
-        run: python ${{ env.ENGINE_PATH }}/scripts/ai_pr_review.py
+        run: python ai-review-engine/scripts/ai_pr_review.py
 
       - name: Surface policy decision
         id: policy_result
