@@ -12,6 +12,16 @@ on:
         description: Repository in owner/repo format
         required: true
         type: string
+      engine_repository:
+        description: AI review engine repository in owner/repo format
+        required: false
+        type: string
+        default: ""
+      engine_ref:
+        description: Git ref (branch/tag/SHA) for AI review engine repository
+        required: false
+        type: string
+        default: main
       pr_number:
         description: Pull request number
         required: true
@@ -52,16 +62,27 @@ jobs:
       - name: Checkout caller repository
         uses: actions/checkout@v5
 
-      - name: Resolve engine repository from workflow ref
+      - name: Resolve engine repository/ref
         env:
-          JOB_WORKFLOW_REF: ${{ github.job_workflow_ref }}
-          WORKFLOW_REF: ${{ github.workflow_ref }}
+          ENGINE_REPOSITORY_INPUT: ${{ inputs.engine_repository }}
+          ENGINE_REF_INPUT: ${{ inputs.engine_ref }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
-          EFFECTIVE_REF="${JOB_WORKFLOW_REF:-$WORKFLOW_REF}"
-          ENGINE_REPO="${EFFECTIVE_REF%%/.github/workflows/*}"
-          ENGINE_REF="${EFFECTIVE_REF##*@}"
+          if [ -n "$ENGINE_REPOSITORY_INPUT" ]; then
+            ENGINE_REPO="$ENGINE_REPOSITORY_INPUT"
+          else
+            ENGINE_REPO="${REPOSITORY_OWNER}/Agent-Repo"
+          fi
+
+          if [ -n "$ENGINE_REF_INPUT" ]; then
+            ENGINE_REF="$ENGINE_REF_INPUT"
+          else
+            ENGINE_REF="main"
+          fi
+
           echo "ENGINE_REPO=$ENGINE_REPO" >> "$GITHUB_ENV"
           echo "ENGINE_REF=$ENGINE_REF" >> "$GITHUB_ENV"
+          echo "Using engine repository: $ENGINE_REPO @ $ENGINE_REF"
 
       - name: Checkout AI review engine repository
         uses: actions/checkout@v5

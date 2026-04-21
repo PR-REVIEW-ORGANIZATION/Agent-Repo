@@ -144,6 +144,8 @@ Reusable workflow exposed by this repo:
 
 Caller passes:
 - `repository`
+- `engine_repository` (optional, defaults to `${{ github.repository_owner }}/Agent-Repo`)
+- `engine_ref` (optional, defaults to `main`)
 - `pr_number`
 - `is_draft`
 - `openai_model`
@@ -168,6 +170,9 @@ jobs:
     with:
       openai_model: gpt-5-mini
       repository: ${{ github.repository }}
+      # Optional overrides if your engine repo/ref is not <OWNER_OR_ORG>/Agent-Repo@main
+      engine_repository: <OWNER_OR_ORG>/Agent-Repo
+      engine_ref: main
       pr_number: ${{ github.event.pull_request.number }}
       is_draft: ${{ github.event.pull_request.draft }}
     secrets:
@@ -194,6 +199,9 @@ The workflow also writes an `AI PR Review Decision` section to the GitHub Action
   - `pr_number`
   - `is_draft`
   - secret `OPENAI_API_KEY`
+- Optional caller overrides are available for non-default engine location/version:
+  - `engine_repository`
+  - `engine_ref`
 - Behavior note: policy decision is now explicitly surfaced through reusable-workflow outputs and job summary.
 
 ## Policy Configuration
